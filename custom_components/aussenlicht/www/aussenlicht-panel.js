@@ -532,12 +532,15 @@
             <div class="mini"><label>Von (Tag / Monat)</label>${dateField("start", s.start)}</div>
             <div class="mini"><label>Bis (Tag / Monat)</label>${dateField("end", s.end)}</div>
             <label class="mini">Preset${this._presetSelect(this._a("season", sid, "preset"), opts, s.preset)}</label>
-            <label class="mini">Dauer (Minuten)<input type="number" class="num" min="1" step="1" ${this._a("season", sid, "duration_min")} value="${esc(s.duration_min === null || s.duration_min === undefined ? "" : s.duration_min)}"></label>
+            <label class="mini">Endet<select ${this._a("season", sid, "until_mode")}>${this._opt("duration", "nach Dauer", s.until_mode !== "time")}${this._opt("time", "um Uhrzeit", s.until_mode === "time")}</select></label>
+            ${s.until_mode === "time"
+              ? `<label class="mini">Uhrzeit<input type="time" ${this._a("season", sid, "until_time")} value="${esc(s.until_time || "")}"></label>`
+              : `<label class="mini">Dauer (Minuten)<input type="number" class="num" min="1" step="1" ${this._a("season", sid, "duration_min")} value="${esc(s.duration_min === null || s.duration_min === undefined ? "" : s.duration_min)}"></label>`}
           </div>
           <div class="field"><label class="lbl">Startet bei</label>
             ${startSteps.length ? `<div class="checks">${startSteps.map((st) => `<label class="chk"><input type="checkbox" data-k="season" data-id="${esc(sid)}" data-f="steps" data-sid="${esc(st.id)}"${s.steps.includes(st.id) ? " checked" : ""}> ${esc(stepLabel(st))}</label>`).join("")}</div>`
               : `<div class="muted small">${zone ? "Der Bereich hat keine Schritte mit Aktion An oder Dimmen." : "Bitte zuerst einen Bereich wählen."}</div>`}
-            <div class="small">Wenn der Bereich bei einem dieser Schritte angeht, läuft das Preset für die Dauer, danach das Standard-Preset.</div>
+            <div class="small">Wenn der Bereich bei einem dieser Schritte angeht, läuft das Preset für die Dauer bzw. bis zur Uhrzeit, danach das Standard-Preset.</div>
           </div>
           <div class="footer"><span></span><button class="danger" data-act="rm-season" data-s="${esc(sid)}">Saison löschen</button></div>
         </section>`;
@@ -628,6 +631,11 @@
           s.preset = "";
           structural = true;
         } else if (f === "duration_min") s.duration_min = this._num(val, null);
+        else if (f === "until_mode") {
+          s.until_mode = val;
+          if (val === "time" && !s.until_time) s.until_time = "22:00";
+          structural = true;
+        } else if (f === "until_time") s.until_time = val || null;
         else if (/^(start|end)_[dm]$/.test(f)) {
           const [which, part] = f.split("_");
           const cur = String(s[which] || "01-01").split("-");
@@ -729,7 +737,7 @@
         if (!zid) return;
         let id = rid();
         while (w.seasons[id]) id = rid();
-        w.seasons[id] = { name: "Neue Saison", enabled: true, zone_id: zid, start: "12-01", end: "01-06", preset: "", duration_min: 120, steps: [] };
+        w.seasons[id] = { name: "Neue Saison", enabled: true, zone_id: zid, start: "12-01", end: "01-06", preset: "", duration_min: 120, until_mode: "duration", until_time: null, steps: [] };
       } else if (act === "rm-season") {
         const s = w.seasons[b.dataset.s];
         if (!s) return;

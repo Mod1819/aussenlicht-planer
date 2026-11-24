@@ -31,6 +31,8 @@ bekommt von HA die Property `hass` (und `narrow`, `panel`). Alle Daten nur über
       "end": "01-06",
       "preset": "Weihnachten ",
       "duration_min": 120,
+      "until_mode": "duration",
+      "until_time": null,
       "steps": ["s1"]
     }
   },

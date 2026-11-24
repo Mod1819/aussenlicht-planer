@@ -79,6 +79,8 @@ SEASON_SCHEMA = vol.Schema(
         vol.Required("end"): _md,
         vol.Required("preset"): vol.All(str, vol.Length(min=1)),
         vol.Optional("duration_min", default=120): vol.All(vol.Coerce(int), vol.Range(1, 1440)),
+        vol.Optional("until_mode", default="duration"): vol.In(("duration", "time")),
+        vol.Optional("until_time", default=None): vol.Any(None, _hhmm),
         vol.Optional("steps", default=list): [_ident],
     }
 )
@@ -136,6 +138,8 @@ def validate_config(raw: Any) -> dict[str, Any]:
             raise vol.Invalid(
                 f"Saison '{season['name']}': Startschritt gehört nicht (mehr) zu '{zone['name']}'"
             )
+        if season["until_mode"] == "time" and not season["until_time"]:
+            raise vol.Invalid(f"Saison '{season['name']}': Uhrzeit für das Ende fehlt")
         if not season["steps"]:
             raise vol.Invalid(f"Saison '{season['name']}': mindestens einen Startschritt wählen")
     return cfg

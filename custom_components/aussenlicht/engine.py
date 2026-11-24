@@ -49,6 +49,18 @@ def _events_around(zone, now: datetime, sun_for, tz) -> list[tuple[datetime, dic
     return ev
 
 
+def season_end(season: dict[str, Any], start: datetime, tz: tzinfo) -> datetime:
+    """Ende des Saison-Fensters: nach Dauer oder zur festen Uhrzeit (ggf. am Folgetag)."""
+    if season.get("until_mode") == "time" and season.get("until_time"):
+        hh, mm = (int(x) for x in season["until_time"].split(":"))
+        local = start.astimezone(tz)
+        end = datetime.combine(local.date(), time(hh, mm), tzinfo=tz)
+        if end <= local:
+            end += timedelta(days=1)
+        return end
+    return start + timedelta(minutes=season["duration_min"])
+
+
 def season_window(
     cfg: dict[str, Any], zone_id: str, now: datetime, sun_for: SunFor, tz: tzinfo
 ) -> dict[str, Any] | None:
@@ -64,7 +76,7 @@ def season_window(
                 continue
             if not season_active(season, t.date()):
                 continue
-            end = t + timedelta(minutes=season["duration_min"])
+            end = season_end(season, t, tz)
             if now >= end:
                 continue
             # Ein Ausschalten zwischen Start und jetzt beendet das Fenster.

@@ -154,3 +154,25 @@ def test_defaults():
     c = validate_config({})
     assert c["settings"]["dry_run"] is True
     assert c["settings"]["notify_level"] == "errors"
+
+
+def test_season_until_fixed_time():
+    c = cfg(until_mode="time", until_time="22:00")
+    assert desired_state(c, "gaube", at(2026, 12, 10, 21, 59), sun_for, TZ)["preset"] == "Weihnachten "
+    assert desired_state(c, "gaube", at(2026, 12, 10, 22, 0), sun_for, TZ)["preset"] == "Gaube1"
+    w = season_window(c, "gaube", at(2026, 12, 10, 18, 0), sun_for, TZ)
+    assert w["end"] == at(2026, 12, 10, 22, 0)
+
+
+def test_season_until_time_after_midnight():
+    c = cfg(until_mode="time", until_time="01:00")
+    assert desired_state(c, "gaube", at(2026, 12, 11, 0, 30), sun_for, TZ)["preset"] == "Weihnachten "
+    assert desired_state(c, "gaube", at(2026, 12, 11, 1, 0), sun_for, TZ)["preset"] == "Gaube1"
+
+
+def test_season_until_time_missing():
+    raw = cfg()
+    raw["seasons"]["xmas"]["until_mode"] = "time"
+    raw["seasons"]["xmas"]["until_time"] = None
+    with pytest.raises(vol.Invalid, match="Uhrzeit für das Ende"):
+        validate_config(raw)
