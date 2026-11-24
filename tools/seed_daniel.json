@@ -1,0 +1,33 @@
+{
+  "zones": {
+    "gaube": {
+      "name": "Gaube", "enabled": true,
+      "entities": ["switch.shellyplus1_cc7b5c8648bc_switch_0"],
+      "wled_presets": ["select.wled_voreinstellung_4", "select.wled_voreinstellung_5"],
+      "default_preset": "Gaube1",
+      "steps": [
+        {"id": "abend", "anchor": "sunset", "offset_min": 0, "action": "on"},
+        {"id": "frueh", "anchor": "sunrise", "offset_min": -120, "action": "on"},
+        {"id": "morgen_aus", "anchor": "sunrise", "offset_min": 0, "action": "off"}
+      ]
+    },
+    "einfahrt": {
+      "name": "Einfahrt", "enabled": true,
+      "entities": ["light.einfahrt"], "wled_presets": [], "default_preset": "",
+      "steps": [
+        {"id": "e120", "anchor": "sunset", "offset_min": -120, "action": "dim", "brightness_pct": 20},
+        {"id": "e60", "anchor": "sunset", "offset_min": -60, "action": "dim", "brightness_pct": 15},
+        {"id": "e30", "anchor": "sunset", "offset_min": -30, "action": "dim", "brightness_pct": 9},
+        {"id": "e0", "anchor": "sunset", "offset_min": 0, "action": "off"}
+      ]
+    }
+  },
+  "seasons": {
+    "weihnachten": {
+      "name": "Weihnachten", "enabled": true, "zone_id": "gaube",
+      "start": "12-01", "end": "01-06", "preset": "Weihnachten ",
+      "duration_min": 120, "steps": ["abend"]
+    }
+  },
+  "settings": {"dry_run": true, "notify_service": "rest_command.telegram_daniel", "notify_level": "errors", "wled_delay_s": 10}
+}

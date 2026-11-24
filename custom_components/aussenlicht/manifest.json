@@ -1,0 +1,15 @@
+{
+  "domain": "aussenlicht",
+  "name": "Außenlicht-Planer",
+  "after_dependencies": ["frontend", "panel_custom"],
+  "codeowners": ["@Mod1819"],
+  "config_flow": true,
+  "dependencies": ["http", "websocket_api"],
+  "documentation": "https://github.com/Mod1819/aussenlicht-planer",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Mod1819/aussenlicht-planer/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}
