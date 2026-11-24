@@ -89,6 +89,7 @@
     h3 { font-size:15px; font-weight:500; margin:0 0 8px; }
     .muted { color:var(--secondary-text-color); }
     .small { font-size:12px; color:var(--secondary-text-color); }
+    .steptime { align-self:center; white-space:nowrap; font-weight:600; }
     .banner { background:var(--warning-color, #f59e0b); color:#000; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-weight:500; }
     .suninfo { margin-bottom:16px; display:flex; gap:16px; flex-wrap:wrap; }
     .pill { display:inline-block; padding:2px 10px; border-radius:12px; font-size:13px; font-weight:500; color:#fff; background:var(--secondary-text-color); }
@@ -499,6 +500,9 @@
       if (st.action === "dim") {
         h += `<label class="mini">Helligkeit (%)<input type="number" class="num" min="1" max="100" step="1" ${A("brightness_pct")} value="${esc(st.brightness_pct === null || st.brightness_pct === undefined ? "" : st.brightness_pct)}"></label>`;
       }
+      const zs = this._status && this._status.zones && this._status.zones[zid];
+      const ev = zs && zs.timeline ? zs.timeline.find((e) => e.step_id === st.id) : null;
+      h += `<span class="small steptime">${ev ? `heute ${esc(fmtTime(ev.time))}` : "heute –"}</span>`;
       h += `<button class="icon danger" data-act="rm-step" data-z="${esc(zid)}" data-s="${esc(st.id)}" title="Schritt löschen">&#10005;</button></div>`;
       return h;
     }

@@ -1,6 +1,6 @@
 # Außenlicht-Planer (Home Assistant Custom Integration)
 
-Version **0.2.0**: zentrale Zeitsteuerung der Außenbeleuchtung mit eigener Oberfläche (Seitenleiste „Außenlicht“).
+Version **0.2.1**: zentrale Zeitsteuerung der Außenbeleuchtung mit eigener Oberfläche (Seitenleiste „Außenlicht“).
 
 - **Bereiche** (z. B. Gaube, Einfahrt) mit beliebig vielen Schritten. Jeder Schritt hängt an Sonnenuntergang oder Sonnenaufgang ± Minuten oder an einer festen Uhrzeit. Aktionen: An, Aus oder Dimmen in %.
 - **WLED-Presets** pro Bereich mit einem Standard-Preset.
