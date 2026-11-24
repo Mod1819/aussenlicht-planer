@@ -155,3 +155,17 @@ async def test_unload_and_reload_keeps_config(setup):
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert "gaube" in entry.runtime_data.store.data["zones"]
+
+
+async def test_preset_on_synced_wled_with_unknown_state(setup, freezer):
+    """WLED-Slave per Sync meldet 'unknown' – Preset muss trotzdem gesetzt werden."""
+    hass, ws, calls, entry = setup
+    freezer.move_to(datetime(2026, 12, 10, 17, 0, tzinfo=TZ))
+    hass.states.async_set("select.w5", "unknown", {"options": ["Gaube1", "Weihnachten "]})
+    assert (await _ws(ws, type="aussenlicht/config/save", config=CONFIG))["success"]
+    with patch("custom_components.aussenlicht.runner.WLED_VERIFY_S", 0):
+        await entry.runtime_data.runner.async_apply_now("gaube")
+        await hass.async_block_till_done()
+    assert hass.states.get("select.w5").state == "Weihnachten "
+    log = entry.runtime_data.runner.log
+    assert log[0]["ok"], log[0]

@@ -7,7 +7,7 @@ from collections import deque
 from datetime import date, datetime, timedelta
 from typing import Any
 
-from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, STATE_UNAVAILABLE
 from homeassistant.core import CoreState, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later, async_track_time_interval
 from homeassistant.helpers.sun import get_astral_event_date
@@ -178,7 +178,8 @@ class Runner:
     async def _preset(self, entity_id: str, preset: str, dry: bool) -> str | None:
         for attempt in range(WLED_RETRIES):
             state = self.hass.states.get(entity_id)
-            if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            # "unknown" ist normal (z. B. WLED per Sync gesteuert -> kein aktives Preset)
+            if state is None or state.state == STATE_UNAVAILABLE:
                 if dry:
                     return None
                 await asyncio.sleep(WLED_VERIFY_S)
