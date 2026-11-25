@@ -4,7 +4,7 @@
 
   const TABS = [
     ["overview", "Übersicht"],
-    ["zones", "Bereiche"],
+    ["zones", "Zeitpläne"],
     ["seasons", "Saisons"],
     ["settings", "Einstellungen"],
   ];
@@ -89,6 +89,7 @@
     h3 { font-size:15px; font-weight:500; margin:0 0 8px; }
     .muted { color:var(--secondary-text-color); }
     .small { font-size:12px; color:var(--secondary-text-color); }
+    .plan { list-style:none; margin:4px 0; padding:0; } .plan li { padding:3px 0; } .plan .t { display:inline-block; min-width:48px; font-weight:600; }
     .steptime { align-self:center; white-space:nowrap; font-weight:600; }
     .banner { background:var(--warning-color, #f59e0b); color:#000; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-weight:500; }
     .suninfo { margin-bottom:16px; display:flex; gap:16px; flex-wrap:wrap; }
@@ -475,8 +476,9 @@
             ${this._presetSelect(this._a("zone", zid, "default_preset"), defOptions, z.default_preset)}
             ${z.wled_presets.length ? "" : `<div class="small">Zuerst eine WLED-Entität hinzufügen, um Presets auszuwählen.</div>`}
           </div>
-          <div class="field"><label class="lbl">Schritte</label>
-            ${z.steps.length ? "" : `<div class="muted small">Noch keine Schritte.</div>`}
+          ${this._planSummary(zid, z)}
+          <div class="field"><label class="lbl">Schaltpunkte bearbeiten</label>
+            ${z.steps.length ? "" : `<div class="muted small">Noch keine Schaltpunkte.</div>`}
             ${z.steps.map((st) => this._stepRow(zid, st)).join("")}
             <div class="actions"><button data-act="add-step" data-z="${esc(zid)}">+ Schritt</button></div>
           </div>
@@ -485,6 +487,29 @@
       });
       h += `</div><div class="actions"><button class="primary" data-act="add-zone">+ Bereich</button></div>`;
       return h;
+    }
+
+    /** Klartext-Ablauf eines Bereichs, nach heutiger Uhrzeit sortiert. */
+    _planSummary(zid, z) {
+      if (!z.steps.length) return "";
+      const zs = this._status && this._status.zones && this._status.zones[zid];
+      const tl = (zs && zs.timeline) || [];
+      const timeOf = (st) => { const e = tl.find((x) => x.step_id === st.id); return e ? e.time : null; };
+      const rows = z.steps.map((st) => ({ st, t: timeOf(st) }))
+        .sort((a, b) => (a.t ? new Date(a.t) : Infinity) - (b.t ? new Date(b.t) : Infinity));
+      const when = (st) => {
+        if (st.anchor === "time") return `fest um ${esc(st.time || "–")} Uhr`;
+        const base = st.anchor === "sunset" ? "Sonnenuntergang" : "Sonnenaufgang";
+        const o = Number(st.offset_min) || 0;
+        if (!o) return `bei ${base}`;
+        const abs = Math.abs(o);
+        const dur = abs % 60 === 0 ? `${abs / 60} h` : `${abs} min`;
+        return `${dur} ${o < 0 ? "vor" : "nach"} ${base}`;
+      };
+      const what = (st) => st.action === "on" ? "<b>An</b>" : st.action === "off" ? "<b>Aus</b>" : `<b>Dimmen ${esc(st.brightness_pct)} %</b>`;
+      return `<div class="field"><label class="lbl">Ablauf heute</label><ul class="plan">${rows.map(({ st, t }) =>
+        `<li><span class="t">${t ? esc(fmtTime(t)) : "–"}</span> ${what(st)} <span class="muted">– ${when(st)}</span></li>`).join("")}</ul>
+        <div class="small">Ändern unten bei „Schaltpunkte bearbeiten“: jede Zeile ist ein Schaltpunkt (Anker, Versatz/Uhrzeit, Aktion).</div></div>`;
     }
 
     _stepRow(zid, st) {
