@@ -34,6 +34,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: AussenlichtConfigEntry) 
     store = ConfigStore(hass)
     await store.async_load()
     runner = Runner(hass, store)
+    await runner.async_load()
     entry.runtime_data = AussenlichtData(store=store, runner=runner)
     runner.async_start()
     await panel.async_register_panel(hass)
@@ -43,6 +44,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: AussenlichtConfigEntry) 
 async def async_unload_entry(hass: HomeAssistant, entry: AussenlichtConfigEntry) -> bool:
     panel.async_remove_panel(hass)
     entry.runtime_data.runner.async_stop()
+    await entry.runtime_data.runner.async_flush()
     await entry.runtime_data.store.async_flush()
     return True
 

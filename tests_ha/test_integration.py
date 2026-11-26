@@ -169,3 +169,58 @@ async def test_preset_on_synced_wled_with_unknown_state(setup, freezer):
     assert hass.states.get("select.w5").state == "Weihnachten "
     log = entry.runtime_data.runner.log
     assert log[0]["ok"], log[0]
+
+
+async def test_restart_in_sync_sends_nothing(setup, freezer):
+    """Nach Neustart: Zustand stimmt schon -> nicht schalten, nicht melden."""
+    hass, ws, calls, entry = setup
+    freezer.move_to(datetime(2026, 12, 10, 17, 0, tzinfo=TZ))
+    hass.states.async_set("switch.gaube", "on")
+    for e in ("select.w4", "select.w5"):
+        hass.states.async_set(e, "Weihnachten ", {"options": ["Gaube1", "Weihnachten "]})
+    hass.states.async_set("light.einfahrt", "off")
+    assert (await _ws(ws, type="aussenlicht/config/save", config=CONFIG))["success"]
+    runner = entry.runtime_data.runner
+    runner.last.clear()  # simuliert frischen Start
+    runner._forced.clear()
+    with patch("custom_components.aussenlicht.runner.WLED_VERIFY_S", 0):
+        await runner.async_tick()
+        await hass.async_block_till_done()
+    assert not calls["sw_on"] and not calls["li_off"] and not calls["select"] and not calls["notify"]
+    assert "bereits korrekt" in runner.log[0]["text"]
+    # Danach normaler Wechsel (Ende Weihnachtsfenster) wird gemeldet
+    freezer.move_to(datetime(2026, 12, 10, 18, 40, tzinfo=TZ))
+    with patch("custom_components.aussenlicht.runner.WLED_VERIFY_S", 0):
+        await runner.async_tick()
+        await hass.async_block_till_done()
+    assert calls["select"] and calls["select"][-1].data["option"] == "Gaube1"
+    assert len(calls["notify"]) == 1
+
+
+async def test_restart_out_of_sync_applies(setup, freezer):
+    hass, ws, calls, entry = setup
+    freezer.move_to(datetime(2026, 12, 10, 17, 0, tzinfo=TZ))
+    hass.states.async_set("switch.gaube", "off")  # z. B. Shelly nach Stromausfall aus
+    assert (await _ws(ws, type="aussenlicht/config/save", config=CONFIG))["success"]
+    runner = entry.runtime_data.runner
+    runner.last.clear(); runner._forced.clear()
+    with patch("custom_components.aussenlicht.runner.WLED_VERIFY_S", 0):
+        await runner.async_tick()
+        await hass.async_block_till_done()
+    assert {c.data["entity_id"] for c in calls["sw_on"]} == {"switch.gaube"}
+
+
+async def test_log_survives_reload(setup, freezer):
+    hass, ws, calls, entry = setup
+    freezer.move_to(datetime(2026, 12, 10, 17, 0, tzinfo=TZ))
+    assert (await _ws(ws, type="aussenlicht/config/save", config=CONFIG))["success"]
+    with patch("custom_components.aussenlicht.runner.WLED_VERIFY_S", 0):
+        await _ws(ws, type="aussenlicht/apply_now")
+        await hass.async_block_till_done()
+    texts = [e["text"] for e in entry.runtime_data.runner.log]
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    after = [e["text"] for e in entry.runtime_data.runner.log]
+    assert texts and all(t in after for t in texts)
